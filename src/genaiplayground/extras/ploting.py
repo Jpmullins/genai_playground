@@ -33,7 +33,7 @@ def smooth(scalars: list[float]) -> list[float]:
 
 
 def gen_loss_plot(trainer_log: list[dict[str, Any]]) -> "matplotlib.figure.Figure":
-r"""Plot loss curves in Playground Board."""
+    r"""Plot loss curves in Playground Board."""
     plt.close("all")
     plt.switch_backend("agg")
     fig = plt.figure()
