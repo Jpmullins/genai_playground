@@ -1,0 +1,19 @@
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+
+# Local environment/config
+.env
+
+# Build/outputs/cache
+.cache/
+outputs/
+.DS_Store
+
+AGENTS.md

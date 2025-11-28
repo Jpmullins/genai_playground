@@ -1,0 +1,11 @@
+[project]
+name = "genai-playground"
+version = "0.1.0"
+description = "Local HF + OpenAI playground with MLflow tracing, activations, and fine-tuning"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

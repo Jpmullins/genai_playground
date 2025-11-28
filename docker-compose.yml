@@ -1,0 +1,77 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: mlflow_db
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: mlflow_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  mlflow:
+    image: python:3.10-slim
+    depends_on:
+      - db
+      - minio
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_DEFAULT_REGION: us-east-1
+    ports:
+      - "5000:5000"
+    command: >
+      sh -c "pip install --no-cache-dir 'mlflow>=3.5.1' boto3 psycopg2-binary && \
+      mlflow server --backend-store-uri postgresql+psycopg2://mlflow:mlflow_password@db:5432/mlflow_db \
+      --default-artifact-root s3://mlflow/ --host 0.0.0.0 --port 5000 \
+      --allowed-hosts '*' --cors-allowed-origins '*'"
+
+  app:
+    build: .
+    depends_on:
+      - mlflow
+    environment:
+      HUGGINGFACE_HUB_TOKEN: ${HUGGINGFACE_HUB_TOKEN}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      HF_MODEL_NAME: ${HF_MODEL_NAME:-gpt2}
+      OPENAI_MODEL_NAME: ${OPENAI_MODEL_NAME:-gpt-4o-mini}
+      USE_RESPONSES_API: ${USE_RESPONSES_API:-True}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_EXPERIMENT_NAME: llm_pipeline
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+    ports:
+      - "7860:7860"
+    command: ["python", "app.py"]
+
+# vllm:
+#   image: vllm/vllm-openai:latest
+#   runtime: nvidia
+#   environment:
+#     - NVIDIA_VISIBLE_DEVICES=all
+#   command: >
+#     python -m vllm.entrypoints.openai.api_server
+#       --model /path/to/your/model
+#       --host 0.0.0.0
+#       --port 8000
+#   ports:
+#     - "8000:8000"
+#   # Add volumes / model paths as needed
+#   # This service requires a GPU. Leave it commented out if you only have CPU.
+
+volumes:
+  pgdata:
+  minio_data:
